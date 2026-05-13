@@ -172,3 +172,11 @@ model master_options {
 
   @@unique([category, code])
 }
+
+model master_categories {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code       String   @unique @db.VarChar(50)
+  name       String   @db.VarChar(255)
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  updated_at DateTime @default(now()) @db.Timestamp(6)
+}
