@@ -1,0 +1,174 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model addresses {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  province     String   @db.VarChar(255)
+  district     String   @db.VarChar(255)
+  ward         String   @db.VarChar(255)
+  street       String
+  full_address String?
+  latitude     Decimal? @db.Decimal(10, 7)
+  longitude    Decimal? @db.Decimal(10, 7)
+  rooms        rooms[]
+}
+
+model admin_users {
+  id                                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                               String    @unique @db.VarChar(255)
+  password_hash                       String    @db.VarChar(255)
+  full_name                           String    @db.VarChar(255)
+  phone                               String?   @db.VarChar(50)
+  avatar                              String?
+  role                                String    @default("admin") @db.VarChar(50)
+  status                              String    @default("active") @db.VarChar(20)
+  last_login_at                       DateTime? @db.Timestamp(6)
+  created_at                          DateTime  @default(now()) @db.Timestamp(6)
+  updated_at                          DateTime  @default(now()) @db.Timestamp(6)
+  rooms_rooms_created_byToadmin_users rooms[]   @relation("rooms_created_byToadmin_users")
+  rooms_rooms_updated_byToadmin_users rooms[]   @relation("rooms_updated_byToadmin_users")
+}
+
+model facilities {
+  id              String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name            String            @unique @db.VarChar(255)
+  icon            String?           @db.VarChar(255)
+  type            String?           @db.VarChar(100)
+  code            String?           @unique @db.VarChar(100)
+  sort_order      Int?              @default(0)
+  is_active       Boolean?          @default(true)
+  created_at      DateTime          @default(now()) @db.Timestamp(6)
+  updated_at      DateTime          @default(now()) @db.Timestamp(6)
+  room_facilities room_facilities[]
+}
+
+model inquiries {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  room_id       String   @db.Uuid
+  customer_name String   @db.VarChar(255)
+  phone         String?  @db.VarChar(50)
+  zalo          String?  @db.VarChar(50)
+  facebook      String?  @db.VarChar(255)
+  message       String?
+  status        String   @default("pending") @db.VarChar(50)
+  created_at    DateTime @default(now()) @db.Timestamp(6)
+  rooms         rooms    @relation(fields: [room_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_inquiries_room")
+
+  @@index([room_id], map: "idx_inquiries_room_id")
+}
+
+model room_facilities {
+  room_id     String     @db.Uuid
+  facility_id String     @db.Uuid
+  facilities  facilities @relation(fields: [facility_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_room_facilities_facility")
+  rooms       rooms      @relation(fields: [room_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_room_facilities_room")
+
+  @@id([room_id, facility_id])
+}
+
+model room_images {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  room_id      String   @db.Uuid
+  image_url    String
+  sort_order   Int      @default(0)
+  is_thumbnail Boolean  @default(false)
+  created_at   DateTime @default(now()) @db.Timestamp(6)
+  rooms        rooms    @relation(fields: [room_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_room_images_room")
+
+  @@index([room_id], map: "idx_room_images_room_id")
+}
+
+model room_views {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  room_id    String   @db.Uuid
+  ip_address String?  @db.VarChar(100)
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  rooms      rooms    @relation(fields: [room_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_room_views_room")
+
+  @@index([room_id], map: "idx_room_views_room_id")
+}
+
+model rooms {
+  id                                                       String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  address_id                                               String            @db.Uuid
+  title                                                    String            @db.VarChar(255)
+  slug                                                     String            @unique @db.VarChar(255)
+  description                                              String?
+  price                                                    Decimal           @db.Decimal(12, 2)
+  deposit                                                  Decimal?          @db.Decimal(12, 2)
+  electric_price                                           Decimal?          @db.Decimal(12, 2)
+  water_price                                              Decimal?          @db.Decimal(12, 2)
+  parking_fee                                              Decimal?          @db.Decimal(12, 2)
+  service_fee                                              Decimal?          @db.Decimal(12, 2)
+  room_area                                                Decimal?          @db.Decimal(8, 2)
+  max_people                                               Int?
+  max_vehicle                                              Int?
+  gender_allowed                                           String?           @db.VarChar(50)
+  floor                                                    String?           @db.VarChar(50)
+  available_from                                           DateTime?         @db.Date
+  google_map_url                                           String?
+  is_available                                             Boolean           @default(true)
+  is_hidden                                                Boolean           @default(false)
+  is_deleted                                               Boolean           @default(false)
+  created_by                                               String?           @db.Uuid
+  updated_by                                               String?           @db.Uuid
+  created_at                                               DateTime          @default(now()) @db.Timestamp(6)
+  updated_at                                               DateTime          @default(now()) @db.Timestamp(6)
+  room_type_id                                             String?           @db.Uuid
+  toilet_type_id                                           String?           @db.Uuid
+  parking_type_id                                          String?           @db.Uuid
+  gate_lock_type_id                                        String?           @db.Uuid
+  curfew_type_id                                           String?           @db.Uuid
+  drying_area_type_id                                      String?           @db.Uuid
+  is_featured                                              Boolean           @default(false)
+  inquiries                                                inquiries[]
+  room_facilities                                          room_facilities[]
+  room_images                                              room_images[]
+  room_views                                               room_views[]
+  addresses                                                addresses         @relation(fields: [address_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rooms_address")
+  admin_users_rooms_created_byToadmin_users                admin_users?      @relation("rooms_created_byToadmin_users", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rooms_created_by")
+  master_options_rooms_curfew_type_idTomaster_options      master_options?   @relation("rooms_curfew_type_idTomaster_options", fields: [curfew_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rooms_curfew_type")
+  master_options_rooms_drying_area_type_idTomaster_options master_options?   @relation("rooms_drying_area_type_idTomaster_options", fields: [drying_area_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rooms_drying_area_type")
+  master_options_rooms_gate_lock_type_idTomaster_options   master_options?   @relation("rooms_gate_lock_type_idTomaster_options", fields: [gate_lock_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rooms_gate_lock_type")
+  master_options_rooms_parking_type_idTomaster_options     master_options?   @relation("rooms_parking_type_idTomaster_options", fields: [parking_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rooms_parking_type")
+  master_options_rooms_room_type_idTomaster_options        master_options?   @relation("rooms_room_type_idTomaster_options", fields: [room_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rooms_room_type")
+  master_options_rooms_toilet_type_idTomaster_options      master_options?   @relation("rooms_toilet_type_idTomaster_options", fields: [toilet_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rooms_toilet_type")
+  admin_users_rooms_updated_byToadmin_users                admin_users?      @relation("rooms_updated_byToadmin_users", fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rooms_updated_by")
+
+  @@index([address_id], map: "idx_rooms_address_id")
+  @@index([created_by], map: "idx_rooms_created_by")
+  @@index([is_available], map: "idx_rooms_is_available")
+  @@index([is_deleted], map: "idx_rooms_is_deleted")
+  @@index([is_hidden], map: "idx_rooms_is_hidden")
+  @@index([price], map: "idx_rooms_price")
+  @@index([curfew_type_id], map: "idx_rooms_curfew_type_id")
+  @@index([gate_lock_type_id], map: "idx_rooms_gate_lock_type_id")
+  @@index([parking_type_id], map: "idx_rooms_parking_type_id")
+  @@index([room_type_id], map: "idx_rooms_room_type_id")
+  @@index([toilet_type_id], map: "idx_rooms_toilet_type_id")
+}
+
+model master_options {
+  id                                              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  category                                        String   @db.VarChar(50)
+  code                                            String   @db.VarChar(100)
+  name                                            String   @db.VarChar(255)
+  sort_order                                      Int?     @default(0)
+  is_active                                       Boolean? @default(true)
+  created_at                                      DateTime @default(now()) @db.Timestamp(6)
+  updated_at                                      DateTime @default(now()) @db.Timestamp(6)
+  rooms_rooms_curfew_type_idTomaster_options      rooms[]  @relation("rooms_curfew_type_idTomaster_options")
+  rooms_rooms_drying_area_type_idTomaster_options rooms[]  @relation("rooms_drying_area_type_idTomaster_options")
+  rooms_rooms_gate_lock_type_idTomaster_options   rooms[]  @relation("rooms_gate_lock_type_idTomaster_options")
+  rooms_rooms_parking_type_idTomaster_options     rooms[]  @relation("rooms_parking_type_idTomaster_options")
+  rooms_rooms_room_type_idTomaster_options        rooms[]  @relation("rooms_room_type_idTomaster_options")
+  rooms_rooms_toilet_type_idTomaster_options      rooms[]  @relation("rooms_toilet_type_idTomaster_options")
+
+  @@unique([category, code])
+}
